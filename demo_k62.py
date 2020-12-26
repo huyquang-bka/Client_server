@@ -7,7 +7,6 @@ import socket
 import zipfile
 from datetime import datetime
 
-
 # C9_day PKSpace coordinates (other images coordinates could be offset by a few pixels)
 # First row 130x130
 # Should write each x-y pair on the same line instead of multiple lines
@@ -162,20 +161,17 @@ folder_write_busy = 'Live/Busy'
 folder_write_free = 'Live/Free'
 
 ####Host and port to connect
-host = '192.168.1.248'    ######ip server
-port = 5523               ######port tự chọn
-
+host = '192.168.1.248'  ######ip server
+port = 5523  ######port tự chọn
 
 # Đọc Camera
 cap = cv2.VideoCapture()
 cap.open("rtsp://admin:bk123456@192.168.0.155:554/Streaming/channels/1/")  ##########Main link
 
-while (1):
-    # cap = cv2.VideoCapture()
-    # cap.open("rtsp://admin:bk123456@192.168.0.155:554/Streaming/channels/1/")##########Main link
-    # cap.open("rtsp://admin:bk123456@192.168.1.155:554/Streaming/channels/1/")
-    #   cap.open("rtsp://admin:bk123456@192.168.1.1:24/Streaming/channels/1/")
+######Counting Frame
+count = 0
 
+while (1):
     ret, img = cap.read()
     imgCopy = img.copy()
     cv2.imwrite('C9_in.jpg', img)
@@ -216,23 +212,24 @@ while (1):
     cv2.imwrite(f"{folder_write_tmp}/C9_{cur_time}.jpg", img)
     cv2.imwrite('C9_process.jpg', img)
 
-####Day server
+    ####Day server
     s = socket.socket()
-    print('[+] Client socket is created.')
+    if count == 0:
+        print('[+] Client socket is created.')
 
-####Try to connect
+    ####Try to connect
     try:
         connect = True
         s.connect((host, port))
+        count += 1
+        if count == 1:
+            print(f'[+] Socket is connected to {host}')
     except:
         connect = False
         print('Connection fail')
 
-    print(f'[+] Socket is connected to {host}')
-
-
-####Nén ảnh và file txt
-    zip_name = 'mainFile.zip'
+    ####Nén ảnh và file txt
+    zip_name = 'main.zip'
     with zipfile.ZipFile(zip_name, 'w') as file:
         file.write('C9_in.jpg')
         file.write("C9_process.jpg")
@@ -242,14 +239,17 @@ while (1):
     l = f.read()
 
     if (connect == True):
-        print('connected')
+        if count == 1:
+            print('connected')
         s.send(zip_name.encode())
         s.sendall(l)
     else:
         pass
-
+    print(f"Frame: {count}")
     f.close()
     s.close()
 
 ####Thời gian trễ giữa 2 ảnh (seconds)
-    # time.sleep(10)
+# time.sleep(10)
+
+print("Finish!")
